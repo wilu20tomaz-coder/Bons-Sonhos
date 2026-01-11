@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bons Sonhos • Calculadora Inteligente</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#4facfe">
+  <meta name="description" content="Calcule o melhor horário para dormir ou acordar com base nos ciclos de sono.">
+
+  <!-- Fontes e Ícones -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    /* =========================
+       VARIÁVEIS E BASE
+    ========================== */
+    :root {
+      /* Variáveis de Cores (Dia) */
+      --bg-gradient-start: #4facfe;
+      --bg-gradient-end: #00f2fe;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --text-main: #2c3e50;
+      --text-secondary: #546e7a;
+      --accent: #00c6fb;
+      --accent-hover: #005bea;
+      --highlight: #e3f2fd;
+      --shadow-color: rgba(32, 124, 229, 0.25);
+    }
+
+    body.night-mode {
+      /* Variáveis de Cores (Noite) */
+      --bg-gradient-start: #0f2027;
+      --bg-gradient-end: #203a43;
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --text-main: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --accent: #764ba2;
+      --accent-hover: #667eea;
+      --highlight: rgba(255, 255, 255, 0.1);
+      --shadow-color: rgba(0, 0, 0, 0.5);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Nunito', sans-serif;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: background 1s ease;
+      position: relative;
+    }
+
+    /* Fundo Animado Container */
+    #background-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+      background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+      transition: background 1s ease;
+    }
+
+    /* Nuvens (CSS Puro para Dia) */
+    .cloud {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 50px;
+      animation: floatCloud linear infinite;
+      z-index: -1;
+      opacity: 0.8;
+      transition: opacity 1s;
+    }
+    
+    body.night-mode .cloud { opacity: 0; } /* Esconde nuvens à noite */
+
+    .cloud::after, .cloud::before {
+      content: ''; position: absolute; background: inherit; border-radius: 50%;
+    }
+    .cloud::after { width: 50px; height: 50px; top: -25px; left: 25px; }
+    .cloud::before { width: 40px; height: 40px; top: -15px; left: 10px; }
+
+    @keyframes floatCloud { from { transform: translateX(-150px); } to { transform: translateX(100vw); } }
+
+    /* =========================
+       CARD PRINCIPAL (Glassmorphism)
+    ========================== */
+    .app-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 40px;
+      padding: 35px 30px;
+      box-shadow: 0 20px 50px var(--shadow-color);
+      border: 1px solid rgba(255,255,255,0.3);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease, background-color 0.5s ease;
+    }
+
+    /* HEADER */
+    header { text-align: center; margin-bottom: 25px; }
+    
+    .logo-icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      display: inline-block;
+      background: linear-gradient(45deg, var(--accent), var(--accent-hover));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+      animation: floatIcon 3s ease-in-out infinite;
+    }
+
+    @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 5px;
+    }
+    p.subtitle { font-size: 0.95rem; color: var(--text-secondary); font-weight: 600; }
+
+    /* SWITCHER DE MODO */
+    .mode-switch-container {
+      background: var(--highlight);
+      border-radius: 25px;
+      padding: 5px;
+      display: flex;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .mode-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 12px;
+      border-radius: 20px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .mode-btn.active {
+      background: var(--card-bg);
+      color: var(--accent);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      transform: scale(1.05);
+    }
+    
+    body.night-mode .mode-btn.active { color: #fff; background: var(--accent); }
+
+    /* INPUT GIGANTE */
+    .input-section { text-align: center; position: relative; margin-bottom: 25px; }
+    
+    label {
+      display: block;
+      margin-bottom: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      font-size: 1.1rem;
+    }
+
+    .time-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+
+    input[type="time"] {
+      display: block;
+      width: 100%;
+      margin: 0 auto;
+      padding: 15px;
+      font-size: 3rem;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      color: var(--text-main);
+      background: transparent;
+      border: 2px dashed var(--accent);
+      border-radius: 25px;
+      text-align: center;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    input[type="time"]:focus, input[type="time"]:hover {
+      background: var(--highlight);
+      border-style: solid;
+      transform: scale(1.02);
+    }
+
+    /* Custom Webkit Time Input Style tweak */
+    input[type="time"]::-webkit-calendar-picker-indicator {
+      background: transparent;
+      bottom: 0; color: transparent; cursor: pointer;
+      height: auto; left: 0; position: absolute; right: 0; top: 0; width: auto;
+    }
+
+    /* BOTÃO PRINCIPAL */
+    .btn-main {
+      width: 100%;
+      padding: 20px;
+      border: none;
+      border-radius: 25px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 25px -5px var(--accent);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-main:active { transform: scale(0.96); box-shadow: 0 5px 15px -5px var(--accent); }
+    .btn-main i { font-size: 1.2rem; }
+
+    /* BOTÃO SECUNDÁRIO (DORMIR AGORA) */
+    .btn-secondary {
+      width: 100%;
+      margin-top: 15px;
+      padding: 15px;
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      border-radius: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      display: none; /* JS controla */
+      transition: all 0.3s;
+    }
+    body.night-mode .btn-secondary { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    /* ÁREA DE ANÚNCIO (PLACEHOLDER) */
+    .ad-slot {
+      width: 100%;
+      height: 60px; /* Altura tipica para mobile banner */
+      margin-top: 25px;
+      background: var(--highlight);
+      border: 2px dashed rgba(127, 140, 141, 0.2);
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      opacity: 0.7;
+    }
+
+    /* DICA */
+    .tip-container {
+      margin-top: 25px;
+      background: var(--highlight);
+      padding: 15px 20px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      text-align: left;
+    }
+    .tip-container i { color: #f1c40f; font-size: 1.2rem; }
+
+    /* OVERLAY DE RESULTADO */
+    .result-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--card-bg);
+      backdrop-filter: blur(15px); /* Extra blur */
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      padding: 30px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(100%);
+      transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+      border-radius: 40px;
+    }
+
+    .result-overlay.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+    .result-header { text-align: center; margin-bottom: 20px; }
+    .result-header h3 { color: var(--text-secondary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+
+    .best-time-box {
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      color: white;
+      padding: 25px;
+      border-radius: 30px;
+      text-align: center;
+      margin-bottom: 25px;
+      box-shadow: 0 15px 35px -10px var(--accent);
+      animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+    }
+
+    @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+    .big-time { font-size: 3.5rem; font-weight: 800; line-height: 1; margin: 5px 0; }
+    .cycle-info { font-size: 0.85rem; opacity: 0.9; }
+
+    .other-times { text-align: center; width: 100%; }
+    .other-times h4 { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px; opacity: 0.7; }
+    
+    .pills-container { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .time-pill {
+      background: var(--highlight);
+      color: var(--text-main);
+      padding: 10px 18px;
+      border-radius: 15px;
+      font-weight: 700;
+      font-size: 1rem;
+      animation: slideUp 0.5s ease both;
+    }
+    
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .close-btn {
+      margin-top: auto;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px;
+      transition: color 0.3s;
+    }
+    .close-btn:hover { color: var(--accent); }
+
+    /* LOADING SPINNER */
+    .loading-overlay {
+      position: absolute; inset: 0; background: var(--card-bg);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+      border-radius: 40px;
+    }
+    .loading-overlay.active { opacity: 1; pointer-events: all; }
+    .spinner {
+      width: 40px; height: 40px; border: 4px solid var(--highlight);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+  </style>
+</head>
+<body>
+
+  <!-- Background Canvas for Night Stars -->
+  <div id="background-canvas"></div>
+  
+  <!-- Clouds for Day Mode (Injected via JS) -->
+  <div id="clouds-container"></div>
+
+  <div class="app-card">
+    
+    <!-- Header -->
+    <header>
+      <i class="fas fa-moon logo-icon" id="main-icon"></i>
+      <h1>Bons Sonhos</h1>
+      <p class="subtitle">Calculadora de Ciclos do Sono</p>
+    </header>
+
+    <!-- Switcher -->
+    <div class="mode-switch-container">
+      <button class="mode-btn active" onclick="switchMode('wake')" id="btn-wake">
+        <i class="fas fa-sun"></i> Acordar
+      </button>
+      <button class="mode-btn" onclick="switchMode('sleep')" id="btn-sleep">
+        <i class="fas fa-bed"></i> Dormir
+      </button>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="input-section">
+      <label id="main-label" for="timeInput">Que horas você quer acordar?</label>
+      <div class="time-wrapper">
+        <input type="time" id="timeInput" required>
+      </div>
+    </div>
+
+    <button class="btn-main" onclick="startCalculation()">
+      <i class="fas fa-calculator"></i> Calcular Horários
+    </button>
+
+    <button class="btn-secondary" id="sleepNowBtn" onclick="sleepNow()">
+      <i class="fas fa-power-off"></i> Vou dormir agora
+    </button>
+
+    <!-- ESPAÇO PARA ANÚNCIO / AD -->
+    <div class="ad-slot">
+      <!-- QUANDO APROVADO: Cole o script do AdSense/Ads aqui e remova o texto abaixo -->
+      <span>Espaço para Anúncio</span>
+    </div>
+
+    <!-- Dica -->
+    <div class="tip-container">
+      <i class="fas fa-lightbulb"></i>
+      <span id="tip-text">Um ciclo de sono dura cerca de 90 minutos. Tente acordar ao final de um ciclo.</span>
+    </div>
+
+    <!-- Overlay de Carregamento -->
+    <div class="loading-overlay" id="loader">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Overlay de Resultado -->
+    <div class="result-overlay" id="resultScreen">
+      <div class="result-header">
+        <h3 id="result-title">Melhor horário para ir para cama:</h3>
+      </div>
+
+      <div class="best-time-box">
+        <div class="big-time" id="bestTime">--:--</div>
+        <div class="cycle-info">Sugestão de Ouro (5 a 6 Ciclos)</div>
+      </div>
+
+      <div class="other-times">
+        <h4>Outras opções possíveis:</h4>
+        <div class="pills-container" id="otherTimes"></div>
+      </div>
+
+      <button class="close-btn" onclick="closeResults()">
+        <i class="fas fa-arrow-left"></i> Voltar e recalcular
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    /* =========================
+       LÓGICA DO APP
+    ========================== */
+    const MS_CYCLE = 90 * 60 * 1000;
+    const MS_FALL_ASLEEP = 14 * 60 * 1000;
+    let currentMode = 'wake'; // 'wake' or 'sleep'
+
+    const tips = [
+      "Evite telas (celular, TV) pelo menos 30 minutos antes de dormir.",
+      "Mantenha o quarto escuro e fresco para uma melhor qualidade de sono.",
+      "Acordar no meio de um ciclo (90min) causa aquela sensação de 'tontura'.",
+      "Café apenas até as 14h para não atrapalhar seu sono profundo.",
+      "Tente manter o mesmo horário de sono, mesmo nos finais de semana."
+    ];
+
+    // Inicialização
+    document.addEventListener("DOMContentLoaded", () => {
+      // Definir hora padrão (amanhã 07:00)
+      document.getElementById("timeInput").value = "07:00";
+      
+      // Iniciar efeitos visuais
+      createClouds();
+      initStars();
+      
+      // Dica aleatória
+      document.getElementById("tip-text").innerText = tips[Math.floor(Math.random() * tips.length)];
+    });
+
+    // Alternar Modos
+    function switchMode(mode) {
+      currentMode = mode;
+      const body = document.body;
+      const btnWake = document.getElementById('btn-wake');
+      const btnSleep = document.getElementById('btn-sleep');
+      const label = document.getElementById('main-label');
+      const sleepBtn = document.getElementById('sleepNowBtn');
+      const icon = document.getElementById('main-icon');
+      const clouds = document.getElementById('clouds-container');
+
+      if (mode === 'wake') {
+        body.classList.remove('night-mode');
+        btnWake.classList.add('active');
+        btnSleep.classList.remove('active');
+        label.innerText = "Que horas você quer acordar?";
+        sleepBtn.style.display = 'none';
+        icon.className = "fas fa-cloud-sun logo-icon";
+        clouds.style.display = 'block';
+        
+        // Atualiza cor do navegador
+        document.querySelector('meta[name="theme-color"]').setAttribute("content", "#4facfe");
+      } else {
+        body.classList.add('night-mode');
+        btnWake.classList.remove('active');
+        btnSleep.classList.add('active');
+        label.innerText = "Que horas você pretende deitar?";
+        sleepBtn.style.display = 'block';
+        icon.className = "fas fa-moon logo-icon";
+        clouds.style.display = 'none';
+        
+        // Define hora atual
+        const now = new Date();
+        document.getElementById("timeInput").value = now.toTimeString().substring(0,5);
+
+        // Atualiza cor do navegador
+        document.querySelector('meta[name="theme-color"]').setAttribute("content", "#0f2027");
+      }
+    }
+
+    // Atalho Dormir Agora
+    function sleepNow() {
+      const now = new Date();
+      document.getElementById("timeInput").value = now.toTimeString().substring(0,5);
+      startCalculation();
+    }
+
+    // Wrapper para simular processamento
+    function startCalculation() {
+      const inputVal = document.getElementById("timeInput").value;
+      if(!inputVal) return;
+
+      const loader = document.getElementById('loader');
+      loader.classList.add('active');
+
+      setTimeout(() => {
+        calculate(inputVal);
+        loader.classList.remove('active');
+      }, 600); // 600ms de delay para efeito visual
+    }
+
+    function calculate(timeString) {
+      const [h, m] = timeString.split(":").map(Number);
+      let baseDate = new Date();
+      baseDate.setHours(h, m, 0, 0);
+
+      let bestTime = "";
+      let others = [];
+      const title = document.getElementById("result-title");
+
+      if (currentMode === 'wake') {
+        // MODO: QUERO ACORDAR -> Calcular hora de ir dormir
+        title.innerText = "Para acordar nesse horário, durma às:";
+        
+        if (baseDate < new Date()) {
+          baseDate.setDate(baseDate.getDate() + 1);
+        }
+
+        // Subtrair ciclos
+        let cycle5 = new Date(baseDate.getTime() - (5 * MS_CYCLE) - MS_FALL_ASLEEP); // 7.5h sono
+        let cycle6 = new Date(baseDate.getTime() - (6 * MS_CYCLE) - MS_FALL_ASLEEP); // 9h sono
+        let cycle4 = new Date(baseDate.getTime() - (4 * MS_CYCLE) - MS_FALL_ASLEEP); // 6h sono
+
+        bestTime = formatTime(cycle5);
+        others.push({ time: formatTime(cycle6), label: "9h de sono" });
+        others.push({ time: formatTime(cycle4), label: "6h de sono" });
+        
+      } else {
+        // MODO: VOU DORMIR -> Calcular hora de acordar
+        title.innerText = "Tente acordar em um destes horários:";
+        
+        let startSleep = new Date(baseDate.getTime() + MS_FALL_ASLEEP);
+
+        let cycle5 = new Date(startSleep.getTime() + (5 * MS_CYCLE));
+        let cycle6 = new Date(startSleep.getTime() + (6 * MS_CYCLE));
+        let cycle4 = new Date(startSleep.getTime() + (4 * MS_CYCLE));
+
+        bestTime = formatTime(cycle5);
+        others.push({ time: formatTime(cycle6), label: "9h de sono" });
+        others.push({ time: formatTime(cycle4), label: "6h de sono" });
+      }
+
+      // Renderizar
+      document.getElementById("bestTime").innerText = bestTime;
+      const othersContainer = document.getElementById("otherTimes");
+      othersContainer.innerHTML = "";
+      
+      others.forEach((item, index) => {
+        othersContainer.innerHTML += `
+          <div class="time-pill" style="animation-delay: ${index * 0.1}s">
+            ${item.time} <span style="font-size:0.7em; opacity:0.7">(${item.label})</span>
+          </div>`;
+      });
+
+      document.getElementById("resultScreen").classList.add("active");
+    }
+
+    function closeResults() {
+      document.getElementById("resultScreen").classList.remove("active");
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    /* =========================
+       EFEITOS VISUAIS (CANVAS & DOM)
+    ========================== */
+    
+    // Nuvens para o modo dia
+    function createClouds() {
+      const container = document.getElementById('clouds-container');
+      for(let i=0; i<5; i++) {
+        const cloud = document.createElement('div');
+        cloud.classList.add('cloud');
+        cloud.style.top = Math.random() * 50 + '%';
+        cloud.style.width = (Math.random() * 100 + 100) + 'px';
+        cloud.style.height = (Math.random() * 30 + 30) + 'px';
+        cloud.style.animationDuration = (Math.random() * 20 + 30) + 's';
+        cloud.style.animationDelay = (Math.random() * -20) + 's'; // Começar em posições diferentes
+        container.appendChild(cloud);
+      }
+    }
+
+    // Estrelas para o modo noite (Canvas)
+    function initStars() {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'stars-canvas';
+      document.getElementById('background-canvas').appendChild(canvas);
+      
+      const ctx = canvas.getContext('2d');
+      let width, height, stars = [];
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        createStars();
+      }
+
+      function createStars() {
+        stars = [];
+        const count = Math.floor((width * height) / 6000); // Densidade baseada no tamanho da tela
+        for(let i=0; i<count; i++) {
+          stars.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: Math.random() * 1.5,
+            alpha: Math.random(),
+            speed: Math.random() * 0.05
+          });
+        }
+      }
+
+      function animateStars() {
+        if(!document.body.classList.contains('night-mode')) {
+          ctx.clearRect(0,0,width,height);
+          requestAnimationFrame(animateStars);
+          return;
+        }
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "white";
+        
+        stars.forEach(star => {
+          star.alpha += star.speed;
+          if(star.alpha >= 1 || star.alpha <= 0) star.speed = -star.speed;
+          
+          ctx.globalAlpha = Math.abs(star.alpha);
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        
+        requestAnimationFrame(animateStars);
+      }
+
+      window.addEventListener('resize', resize);
+      resize();
+      animateStars();
+    }
+  </script>
+</body>
+</html>
