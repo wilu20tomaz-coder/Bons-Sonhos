@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GamerTracker V26 (Platform Filter)</title>
+    <style>
+        :root {
+            /* Cores de Fundo do Layout */
+            --bg-dark: #0d0d12;
+            --bg-card-default: #1c1c21;
+            
+            /* Cores de Fundo Cards */
+            --bg-card-backlog: #1c1c21;
+            --bg-card-playing: #1c1c21;
+            --bg-card-finished: #1c1c21;
+            --bg-card-dropped: #1c1c21;
+
+            /* Cores Principais */
+            --primary: #a855f7;
+            --primary-glow: rgba(168, 85, 247, 0.5);
+            --accent: #22c55e;
+            --accent-glow: rgba(34, 197, 94, 0.5);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.5);
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+            --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --gold: #eab308;
+            --glass: rgba(28, 28, 33, 0.8);
+
+            /* Destaques */
+            --col-backlog-highlight: #444444;
+            --col-playing-highlight: var(--accent);
+            --col-finished-highlight: var(--primary);
+            --col-dropped-highlight: var(--danger);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* --- HEADER --- */
+        header {
+            background: var(--glass);
+            padding: 1rem 2rem;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+        }
+
+        .logo { 
+            font-size: 1.8rem; font-weight: 900; letter-spacing: -2px; 
+            background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .search-container { position: relative; flex: 1; max-width: 350px; }
+        .search-input { 
+            width: 100%; padding: 12px 20px 12px 50px; border-radius: 10px; color: white; transition: 0.3s;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); 
+        }
+        .search-input:focus { 
+            background: rgba(0,0,0,0.4); border-color: var(--primary); 
+            box-shadow: 0 0 15px var(--primary-glow); 
+        }
+        .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.1rem; }
+
+        .controls { display: flex; gap: 10px; align-items: center; }
+
+        /* PROFILE */
+        .user-profile {
+            display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 15px 6px 6px; 
+            border-radius: 50px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.3s;
+        }
+        .user-profile:hover { background: rgba(255,255,255,0.15); border-color: var(--primary); transform: translateY(-1px); }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        .user-name { font-weight: 600; font-size: 0.9rem; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* BUTTONS */
+        .btn { 
+            padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; 
+            font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-sm { padding: 8px 15px; font-size: 0.85rem; }
+        
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px var(--primary-glow); }
+        .btn-primary:hover { 
+            background: color-mix(in srgb, var(--primary) 90%, white); 
+            box-shadow: 0 6px 20px var(--primary-glow); transform: translateY(-1px); 
+        }
+        
+        .btn-luck { 
+            background: linear-gradient(135deg, #f59e0b, #ef4444); color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); 
+        }
+        .btn-luck:hover { filter: brightness(1.1); transform: translateY(-1px) rotate(-1deg); }
+
+        .btn-color { 
+            background: var(--bg-card-default); border: 1px solid rgba(255,255,255,0.15); color: var(--text-muted);
+            padding: 10px; width: 40px; justify-content: center;
+        }
+        .btn-color:hover { background: rgba(255,255,255,0.1); border-color: var(--primary); color: white; }
+        
+        .btn-filter-fav {
+            background: var(--bg-card-default); border: 1px solid rgba(255,255,255,0.15); color: #555;
+            padding: 10px; width: 40px; justify-content: center; font-size: 1.2rem;
+        }
+        .btn-filter-fav.active { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: var(--danger); box-shadow: 0 0 10px var(--danger-glow); }
+        .btn-filter-fav:hover { transform: translateY(-1px); }
+
+        .btn-confirm-drop { background: var(--danger); color: white; box-shadow: 0 4px 15px var(--danger-glow); }
+        .btn-confirm-drop:hover { background: color-mix(in srgb, var(--danger) 90%, white); }
+        
+        .btn-drop { color: var(--danger); border-color: var(--danger); } 
+        .btn-drop:hover { background: rgba(239, 68, 68, 0.2); }
+
+        /* --- VIEW CONTROL TOOLBAR & FILTER --- */
+        .view-toolbar {
+            display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 2rem;
+            background: rgba(255,255,255,0.03); padding: 5px; border-radius: 12px;
+            width: fit-content; margin-left: auto; margin-right: auto;
+            border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px);
+            flex-wrap: wrap;
+        }
+        .view-btn {
+            background: transparent; border: none; color: var(--text-muted);
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+            display: flex; align-items: center; gap: 6px; transition: 0.3s;
+        }
+        .view-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .view-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 10px var(--primary-glow); }
+
+        /* ESTILO DO FILTRO DE PLATAFORMA (NOVO) */
+        .separator-v { width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 5px; }
+        
+        .platform-select {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            outline: none;
+            transition: 0.3s;
+            appearance: none; /* Remove seta padrão */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 14px;
+            padding-right: 30px;
+            min-width: 140px;
+        }
+        .platform-select:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: white;
+            border-color: rgba(255,255,255,0.1);
+        }
+        .platform-select:focus {
+            border-color: var(--primary);
+            color: white;
+            background-color: rgba(0,0,0,0.3);
+        }
+        .platform-select option {
+            background-color: var(--bg-card-default);
+            color: var(--text-main);
+            padding: 10px;
+        }
+
+
+        /* DASHBOARD (Base) */
+        main { padding: 2rem; max-width: 1600px; margin: 0 auto; width: 100%; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; align-items: start; }
+        
+        /* MODO LISTA (Modificações no Dashboard) */
+        .dashboard.view-list { grid-template-columns: 1fr; max-width: 1000px; margin: 0 auto; }
+        .dashboard.view-list .column { min-height: auto; margin-bottom: 1rem; }
+        .dashboard.view-list .col-header { margin-bottom: 10px; }
+        /* Transforma o Card em Linha no modo lista */
+        .dashboard.view-list .game-card { 
+            flex-direction: row; height: 100px; align-items: center; 
+            padding-right: 15px;
+        }
+        .dashboard.view-list .card-img-container { width: 160px; height: 100%; flex-shrink: 0; }
+        .dashboard.view-list .game-info { flex-grow: 1; padding: 10px 15px; }
+        .dashboard.view-list .card-actions { 
+            flex-direction: row; width: auto; border-top: none; background: transparent; 
+            gap: 10px; padding: 0; justify-content: flex-end;
+        }
+        .dashboard.view-list .action-btn { padding: 6px 12px; font-size: 0.8rem; }
+        .dashboard.view-list .review-box { display: none; } /* Oculta review no modo lista pra economizar espaço */
+        
+        /* MODO LINHA DO TEMPO (Timeline) */
+        .timeline-container { display: none; max-width: 800px; margin: 0 auto; position: relative; padding: 20px 0; }
+        .timeline-container::before {
+            content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; 
+            background: rgba(255,255,255,0.1); transform: translateX(-50%);
+        }
+        .timeline-item { display: flex; justify-content: space-between; margin-bottom: 40px; position: relative; }
+        .timeline-item:nth-child(even) { flex-direction: row-reverse; }
+        
+        .timeline-dot {
+            position: absolute; left: 50%; top: 20px; width: 16px; height: 16px; 
+            background: var(--primary); border-radius: 50%; transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px var(--primary-glow); z-index: 2; border: 3px solid var(--bg-dark);
+        }
+        
+        .timeline-date { width: 45%; text-align: right; padding-right: 30px; padding-top: 10px; color: var(--text-muted); font-size: 0.9rem; font-weight: bold; }
+        .timeline-item:nth-child(even) .timeline-date { text-align: left; padding-left: 30px; padding-right: 0; }
+        
+        .timeline-content { width: 45%; }
+        .timeline-content .game-card { margin-bottom: 0; }
+
+        .column {
+            background: rgba(28, 28, 33, 0.5); border-radius: 20px; padding: 1.5rem; 
+            min-height: 400px; border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(5px);
+        }
+
+        .col-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .col-header h2 { font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; }
+        .col-backlog .badge { background: var(--col-backlog-highlight); }
+        .col-playing .badge { background: var(--col-playing-highlight); }
+        .col-finished .badge { background: var(--col-finished-highlight); }
+        .col-dropped .badge { background: var(--col-dropped-highlight); }
+
+        /* CARDS */
+        .game-card {
+            border-radius: 14px; overflow: hidden; margin-bottom: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+            display: flex; flex-direction: column; position: relative;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: fadeIn 0.5s ease forwards;
+        }
+        .col-backlog .game-card { background: var(--bg-card-backlog); }
+        .col-playing .game-card { background: var(--bg-card-playing); }
+        .col-finished .game-card { background: var(--bg-card-finished); }
+        .col-dropped .game-card { background: var(--bg-card-dropped); opacity: 0.8; }
+        .game-info { padding: 15px; position: relative; z-index: 2; background: transparent; }
+
+        .col-backlog .game-card:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 10px 25px rgba(0,0,0,0.4); border-color: var(--col-backlog-highlight); }
+        .col-playing .game-card:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 10px 25px var(--accent-glow); border-color: var(--col-playing-highlight); }
+        .col-finished .game-card:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 10px 25px var(--primary-glow); border-color: var(--col-finished-highlight); }
+        .col-dropped .game-card:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 10px 25px var(--danger-glow); border-color: var(--col-dropped-highlight); opacity: 1; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card-img-container { width: 100%; height: 180px; position: relative; overflow: hidden; }
+        .game-img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .game-card:hover .game-img { transform: scale(1.05); }
+
+        .card-badges { 
+            position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 2; 
+            flex-wrap: wrap; justify-content: flex-end; max-width: 85%;
+        }
+        .time-badge { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); color: #fff; font-size: 0.75rem; padding: 4px 10px; border-radius: 8px; font-weight: bold; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(255,255,255,0.2); }
+        
+        .edit-badge {
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); color: var(--text-main);
+            font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; font-weight: bold;
+            border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; transition: all 0.2s;
+        }
+        .edit-badge:hover { background: rgba(168, 85, 247, 0.3); border-color: var(--primary); transform: scale(1.1); }
+
+        .fav-badge {
+            position: absolute; top: 10px; left: 10px; z-index: 5;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 1rem;
+        }
+        .fav-badge:hover { transform: scale(1.15); background: rgba(255,255,255,0.1); }
+        .fav-badge.active { border-color: var(--danger); box-shadow: 0 0 10px var(--danger-glow); }
+
+        .review-box {
+            padding: 10px 15px; font-size: 0.85rem; color: var(--text-muted);
+            border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.1);
+        }
+        .review-box strong { color: var(--primary); font-weight: 700; margin-right: 5px; }
+
+        .game-title { font-weight: 800; font-size: 1.15rem; color: #fff; margin-bottom: 4px; }
+        .game-platform { font-size: 0.8rem; color: var(--primary); text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
+        .stars { color: var(--gold); font-size: 1rem; margin-top: 5px; }
+
+        .card-actions {
+            padding: 10px 15px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.08);
+            display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between;
+        }
+
+        .action-btn {
+            flex: 1; min-width: 75px; max-width: 100%;
+            background: transparent; border: 1px solid rgba(255,255,255,0.15); color: var(--text-muted);
+            padding: 8px; border-radius: 8px; font-size: 0.85rem; cursor: pointer;
+            transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 5px;
+        }
+        .action-btn.history-btn { flex: 0; width: 40px; } 
+        .action-btn:hover { background: rgba(255,255,255,0.15); color: white; border-color: white; }
+        .btn-delete:hover { background: rgba(239, 68, 68, 0.2); color: var(--danger); border-color: var(--danger); }
+
+        /* MODALS */
+        .modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: var(--bg-card-default); 
+            padding: 2.5rem; border-radius: 20px; width: 90%; max-width: 450px;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-height: 95vh; overflow-y: auto; display: flex; flex-direction: column; 
+        }
+        
+        .modal-scroll-content {
+            overflow-y: auto; padding-right: 15px; margin-bottom: 20px; flex-grow: 1; max-height: 60vh;
+        }
+        .tab-menu, .tab-button, .tab-content { display: none; }
+        
+        #confirmModal .modal-content, #reviewModal .modal-content, #historyModal .modal-content {
+            max-width: 400px; overflow-y: hidden; max-height: fit-content;
+        }
+        
+        /* Estilos do Formulário */
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { 
+            width: 100%; padding: 12px; background: #27272a; border: 1px solid #3f3f46; 
+            color: white; border-radius: 8px; transition: 0.3s; resize: vertical;
+        }
+        .form-group input[type="date"] { color: var(--text-main); }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+        
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .full-width { grid-column: span 2; }
+        .modal-footer { 
+            display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; 
+            padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        #confirmModal .modal-footer, #reviewModal .modal-footer {
+            justify-content: space-between; border-top: none; padding-top: 0; margin-top: 25px;
+        }
+
+        .color-input-container { display: flex; gap: 10px; align-items: center; }
+        .color-input-container input[type="color"] { width: 40px; height: 40px; padding: 0; border: none; border-radius: 5px; cursor: pointer; }
+        .color-input-container input[type="text"] { flex-grow: 1; }
+
+        .section-separator {
+            color: var(--text-main); font-size: 1.1rem; font-weight: 700;
+            margin-top: 1.5rem; margin-bottom: 1rem; padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.2); text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        /* --- ESTILO APRIMORADO DO MODAL DE RESET --- */
+        #fullResetConfirmationModal .modal-content {
+            max-width: 420px;
+            padding: 3rem 2rem;
+            text-align: center;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: linear-gradient(180deg, var(--bg-card-default) 0%, rgba(20, 10, 10, 1) 100%);
+            box-shadow: 0 0 50px rgba(239, 68, 68, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #fullResetConfirmationModal .modal-content::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, transparent, var(--danger), transparent);
+        }
+
+        .reset-icon-container {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            animation: pulse-danger 2s infinite;
+            text-shadow: 0 0 30px rgba(239, 68, 68, 0.4);
+        }
+
+        @keyframes pulse-danger {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .reset-title {
+            font-size: 1.6rem; font-weight: 800; color: #fff; margin-bottom: 10px; letter-spacing: -0.5px;
+        }
+
+        .reset-desc {
+            color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px;
+        }
+
+        .reset-highlight {
+            color: var(--danger); font-weight: 700; background: rgba(239, 68, 68, 0.1); padding: 2px 6px; border-radius: 4px;
+        }
+
+        .reset-actions {
+            display: flex; flex-direction: column; gap: 12px; width: 100%;
+        }
+
+        .btn-cancel-reset {
+            background: rgba(255, 255, 255, 0.05); color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1); justify-content: center;
+            padding: 14px; cursor: pointer; border-radius: 10px; font-weight: 700; transition: 0.3s;
+        }
+        .btn-cancel-reset:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); }
+
+        .btn-confirm-reset {
+            background: transparent; color: var(--danger);
+            border: 1px solid var(--danger); justify-content: center;
+            padding: 14px; font-size: 0.85rem; opacity: 0.7; cursor: pointer;
+            border-radius: 10px; font-weight: 700; transition: 0.3s;
+        }
+        .btn-confirm-reset:hover { background: var(--danger); color: white; opacity: 1; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+        
+        /* ROULETTE OVERLAY - CORRIGIDO */
+        .roulette-overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; 
+            align-items: center; flex-direction: column; backdrop-filter: blur(8px); 
+        }
+        
+        .roulette-card { 
+            background: var(--bg-card-default); width: 320px; border-radius: 20px; 
+            overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.8); transform: scale(0.8); 
+            opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            border: 2px solid rgba(255,255,255,0.1); position: relative; z-index: 3002;
+        }
+        
+        .roulette-card.active { opacity: 1; transform: scale(1); }
+        .roulette-card.spinning { animation: pulse-spin 0.5s infinite alternate; border-color: var(--gold); }
+        
+        @keyframes pulse-spin {
+            from { transform: scale(1); box-shadow: 0 0 20px var(--gold); }
+            to { transform: scale(1.02); box-shadow: 0 0 40px var(--gold); }
+        }
+
+        .roulette-card.winner { transform: scale(1.15); opacity: 1; border-color: var(--accent); box-shadow: 0 0 80px var(--accent-glow); }
+        
+        .r-img-box { 
+            width: 100%; height: 220px; background: #111; display: flex; 
+            align-items: center; justify-content: center; overflow: hidden; position: relative;
+        }
+        
+        .r-img { width: 100%; height: 100%; object-fit: cover; }
+        .r-info { padding: 25px 20px; text-align: center; background: linear-gradient(to top, rgba(0,0,0,0.2), transparent); }
+        .r-title { font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 5px; }
+        .r-plat { color: var(--primary); font-weight: bold; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem; }
+        .flash-effect { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 3001; opacity: 0; pointer-events: none; transition: opacity 0.1s; }
+        
+        @media (max-width: 768px) { .dashboard { grid-template-columns: 1fr; } header { flex-direction: column; align-items: stretch; } .controls { justify-content: space-between; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo" id="siteLogoDisplay">GAME TRACKER</div>
+        
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="searchInput" placeholder="Buscar jogos na lista..." oninput="filterGames()">
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-filter-fav" id="favFilterBtn" onclick="toggleShowFavorites()" title="Mostrar Apenas Favoritos">
+                ❤️
+            </button>
+
+            <button class="btn btn-color" onclick="openColorModal()">
+                🎨 
+            </button>
+            <button class="btn btn-luck" onclick="startRoulette()">
+                🎲 <span>Sortear</span>
+            </button>
+            
+            <button class="btn btn-primary" onclick="openAddModal()">
+                + <span>Novo Jogo</span>
+            </button>
+            
+            <div class="user-profile" onclick="openConfigModal()">
+                <img src="" class="user-avatar" id="userAvatarDisplay" alt="Avatar">
+                <span class="user-name" id="userNameDisplay">Player</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="view-toolbar">
+            <button class="view-btn active" id="view-grade" onclick="switchView('grade')">🧩 Grade</button>
+            <button class="view-btn" id="view-lista" onclick="switchView('lista')">📋 Lista</button>
+            <button class="view-btn" id="view-timeline" onclick="switchView('timeline')">⏳ Timeline</button>
+            
+            <div class="separator-v"></div>
+            
+            <select id="platformFilter" class="platform-select" onchange="applyPlatformFilter()">
+                <option value="all">🎮 Todas</option>
+                </select>
+        </div>
+
+        <div class="dashboard" id="dashboard-view">
+            <div class="column col-backlog">
+                <div class="col-header"><h2>📝 Backlog</h2><span class="badge" id="count-backlog">0</span></div>
+                <div id="list-backlog"></div>
+            </div>
+            <div class="column col-playing">
+                <div class="col-header"><h2>🎮 Jogando</h2><span class="badge" id="count-playing">0</span></div>
+                <div id="list-playing"></div>
+            </div>
+            <div class="column col-finished">
+                <div class="col-header"><h2>🏆 Zerados</h2><span class="badge" id="count-finished">0</span></div>
+                <div id="list-finished"></div>
+            </div>
+            <div class="column col-dropped">
+                <div class="col-header"><h2>🗑️ Dropados</h2><span class="badge" id="count-dropped">0</span></div>
+                <div id="list-dropped"></div>
+            </div>
+        </div>
+
+        <div class="timeline-container" id="timeline-view">
+            </div>
+    </main>
+
+    <div class="flash-effect" id="flashEffect"></div>
+    <div class="roulette-overlay" id="rouletteOverlay" onclick="closeRouletteIfWinner(event)">
+        <div class="roulette-card" id="rouletteCard">
+            <div class="r-img-box">
+                <img src="" class="r-img" id="rImage" alt="Game Image">
+            </div>
+            <div class="r-info">
+                <div class="r-title" id="rTitle">???</div>
+                <div class="r-plat" id="rPlatform">...</div>
+            </div>
+        </div>
+        <p style="margin-top: 40px; color: #aaa; font-size: 0.9rem; opacity: 0; transition: 0.5s" id="clickToCloseMsg">Clique em qualquer lugar para fechar</p>
+    </div>
+
+    <div class="modal" id="gameModal">
+        <div class="modal-content">
+            <input type="hidden" id="editGameId">
+            <h3 style="margin-bottom: 20px; font-size: 1.5rem;" id="modalTitle">Adicionar Jogo</h3>
+            
+            <div class="modal-scroll-content">
+                
+                <h4 class="section-separator">Informações Básicas</h4>
+                <div class="modal-grid">
+                    <div class="full-width form-group"><label>Nome</label><input type="text" id="gameName"></div>
+                    <div class="form-group"><label>Plataforma</label>
+                        <input list="platformSuggestions" id="gamePlatform" placeholder="Ex: PC, PS5, Switch...">
+                        <datalist id="platformSuggestions">
+                            <option value="PC">
+                            <option value="PlayStation 5">
+                            <option value="PlayStation 4">
+                            <option value="Xbox Series">
+                            <option value="Nintendo Switch">
+                            <option value="Steam">
+                        </datalist>
+                    </div>
+                    <div class="form-group"><label>Tempo Estimado (h)</label><input type="number" id="gameTime" min="0"></div>
+                    <div class="full-width form-group"><label>Imagem URL</label><input type="text" id="gameImage"></div>
+                </div>
+                
+                <h4 class="section-separator">Datas</h4>
+                <div class="modal-grid">
+                    <div class="form-group"><label>Data de Início</label><input type="date" id="gameStartDate"></div>
+                    <div class="form-group"><label>Data de Término</label><input type="date" id="gameFinishDate"></div>
+                </div>
+
+                <h4 class="section-separator">Avaliação (Zerados)</h4>
+                <div class="modal-grid">
+                    <div class="full-width form-group"><label>Nota (1-5)</label><select id="gameRating"><option value="0">-</option><option value="1">⭐</option><option value="2">⭐⭐</option><option value="3">⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="5">⭐⭐⭐⭐⭐</option></select></div>
+                    <div class="full-width form-group"><label>Review Curta</label><textarea id="gameReview" rows="3" placeholder="Sua opinião curta sobre o jogo..."></textarea></div>
+                </div>
+            </div>
+            
+            <div class="modal-footer"><button class="btn" style="background:#27272a;color:white;" onclick="closeModal('gameModal')">Cancelar</button><button class="btn btn-primary" onclick="saveGame()">Salvar</button></div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <input type="hidden" id="confirmActionId">
+            <input type="hidden" id="confirmActionType">
+            
+            <h3 style="color: var(--danger); font-size: 1.4rem; margin-bottom: 10px;">⚠️ Confirmação Necessária</h3>
+            
+            <p id="confirmMessage" style="color: var(--text-muted); font-size: 1rem; line-height: 1.4;">
+                Tem certeza que deseja marcar <span id="confirmGameName" style="color: var(--text-main); font-weight: bold;">[Jogo]</span> como Dropado?
+            </p>
+
+            <div class="modal-footer">
+                <button class="btn" style="background:#27272a;color:white;" onclick="closeModal('confirmModal')">Cancelar</button>
+                <button class="btn btn-confirm-drop" id="confirmActionButton" onclick="executeConfirmedAction()">Confirmar Ação</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="reviewModal">
+        <div class="modal-content">
+            <input type="hidden" id="reviewGameId">
+            <h3 style="margin-bottom: 10px; font-size: 1.5rem; text-align: center;">🎉 Finalizar Jogo: <span id="reviewGameTitle" style="color: var(--accent);">[Jogo]</span></h3>
+            
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px;">Registre sua nota final e uma review curta!</p>
+
+            <div class="form-group">
+                <label>⭐ Sua Nota Pessoal (1-5)</label>
+                <select id="reviewRating"><option value="0">-</option><option value="1">⭐</option><option value="2">⭐⭐</option><option value="3">⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="5">⭐⭐⭐⭐⭐</option></select>
+            </div>
+
+            <div class="form-group">
+                <label>✍️ Review Curta (Opcional)</label>
+                <textarea id="reviewShortReview" rows="3" maxlength="200" placeholder="Máximo 200 caracteres..."></textarea>
+            </div>
+            
+            <div class="modal-footer" style="justify-content: space-between;">
+                <button class="btn" style="background:#27272a;color:white;" onclick="closeModal('reviewModal')">Cancelar</button>
+                <button class="btn btn-primary" style="background: var(--accent); box-shadow: 0 4px 15px var(--accent-glow);" onclick="submitReviewAndFinish()">Salvar e Zerar!</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 10px; font-size: 1.5rem;">🔄 Histórico de Status</h3>
+            <h4 id="historyGameTitle" style="color: var(--primary); margin-bottom: 15px;"></h4>
+            
+            <div class="modal-scroll-content" id="historyListContainer" style="max-height: 40vh;">
+                </div>
+
+            <div class="modal-footer" style="justify-content: center;">
+                <button class="btn" style="background:#27272a;color:white;" onclick="closeModal('historyModal')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal" id="colorModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 10px;">🎨 Personalização de Cores</h3>
+            
+            <div class="modal-scroll-content">
+                <h4 class="section-separator">Cores de Fundo e Tema</h4>
+
+                <div class="form-group">
+                    <label>Fundo do Site (Hex)</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgBgDarkPicker">
+                        <input type="text" id="cfgBgDarkText" placeholder="#0d0d12">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Cor Primária (Tema, Botões, Logo)</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgPrimaryColorPicker">
+                        <input type="text" id="cfgPrimaryColorText" placeholder="#a855f7">
+                    </div>
+                </div>
+                
+                <h4 class="section-separator">Fundo dos Cards (por Status)</h4>
+                
+                <div class="form-group">
+                    <label>Backlog (Cor do Card)</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgBgCardBacklogPicker">
+                        <input type="text" id="cfgBgCardBacklogText" placeholder="#1c1c21">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Jogando (Cor do Card)</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgBgCardPlayingPicker">
+                        <input type="text" id="cfgBgCardPlayingText" placeholder="#1c1c21">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Zerados (Cor do Card)</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgBgCardFinishedPicker">
+                        <input type="text" id="cfgBgCardFinishedText" placeholder="#1c1c21">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Dropados (Cor do Card) - NOVO</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgBgCardDroppedPicker">
+                        <input type="text" id="cfgBgCardDroppedText" placeholder="#1c1c21">
+                    </div>
+                </div>
+
+
+                <h4 class="section-separator">Bordas dos Cards (Hover)</h4>
+
+                <div class="form-group">
+                    <label>Backlog (Borda Hover)</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgBacklogColorPicker">
+                        <input type="text" id="cfgBacklogColorText" placeholder="#444444">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Jogando (Borda Hover)</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgPlayingColorPicker">
+                        <input type="text" id="cfgPlayingColorText" placeholder="#22c55e">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Zerados (Borda Hover)</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgFinishedColorPicker">
+                        <input type="text" id="cfgFinishedColorText" placeholder="#a855f7">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Dropados (Borda Hover) - NOVO</label>
+                    <div class="color-input-container">
+                        <input type="color" id="cfgDroppedColorPicker">
+                        <input type="text" id="cfgDroppedColorText" placeholder="#ef4444">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn" style="background:#27272a;color:white;" onclick="closeModal('colorModal')">Fechar</button>
+                
+                <button class="btn btn-luck" style="background: linear-gradient(135deg, #f59e0b, #eab308); color: white; flex-grow: 1;" onclick="randomizeColorsAndApply()">
+                    🎲 Cor Aleatória
+                </button>
+                
+                <button class="btn btn-primary" onclick="saveColorConfig()">Salvar Cores</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="configModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 10px;">⚙️ Configuração Geral</h3>
+            
+            <div class="modal-scroll-content">
+                <h4 class="section-separator">Conta e Títulos</h4>
+                <div class="form-group"><label>Nome Site</label><input type="text" id="cfgSiteName"></div>
+                <div class="form-group"><label>Nick</label><input type="text" id="cfgUserName"></div>
+                <div class="form-group"><label>Avatar URL</label><input type="text" id="cfgUserAvatar"></div>
+
+                <h4 class="section-separator" style="margin-top: 25px;">💾 Dados (Backup)</h4>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top: 15px;">
+                    <button class="btn btn-primary btn-sm" onclick="exportData()">💾 Exportar Dados</button>
+                    <button class="btn btn-luck btn-sm" onclick="document.getElementById('fileInput').click()">📂 Importar Dados</button>
+                    <input type="file" id="fileInput" style="display:none" onchange="importData(this)">
+                </div>
+                <button class="btn btn-sm btn-drop" style="width: 100%; margin-top: 15px;" onclick="openConfirmResetDataModal()">❌ Resetar Tudo (Limpar)</button>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn" style="background:#27272a;color:white;" onclick="closeModal('configModal')">Fechar</button>
+                <button class="btn btn-primary" onclick="saveConfig()">Salvar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="fullResetConfirmationModal">
+        <div class="modal-content">
+            
+            <div class="reset-icon-container">
+                🗑️
+            </div>
+
+            <div class="reset-title">Resetar Tudo?</div>
+            
+            <div class="reset-desc">
+                Isso apagará <span class="reset-highlight">todos os seus jogos</span> e configurações. O aplicativo voltará ao estado original.<br><br>
+                Esta ação não pode ser desfeita.
+            </div>
+
+            <div class="reset-actions">
+                <button class="btn btn-cancel-reset" onclick="cancelReset()">
+                    Cancelar e Voltar
+                </button>
+                
+                <button class="btn btn-confirm-reset" onclick="internalResetData()">
+                    Sim, quero apagar tudo
+                </button>
+            </div>
+
+        </div>
+    </div>
+    <script>
+        // ==========================================================
+        //  SEÇÃO 1: INICIALIZAÇÃO E CONFIGURAÇÕES
+        // ==========================================================
+        
+        let games = JSON.parse(localStorage.getItem('gameTracker_v2')) || [];
+        let config = JSON.parse(localStorage.getItem('gameTracker_config')) || {
+            siteName: "GAME TRACKER",
+            userName: "Player",
+            userAvatar: "https://ui-avatars.com/api/?name=P&background=a855f7&color=fff",
+            // CORES TEMA
+            primaryColor: "#a855f7", 
+            bgDark: "#0d0d12",
+            bgCardBacklog: "#1c1c21",
+            bgCardPlaying: "#1c1c21",
+            bgCardFinished: "#1c1c21",
+            bgCardDropped: "#1c1c21",
+            backlogColor: "#444444",
+            playingColor: "#22c55e",
+            finishedColor: "#a855f7",
+            droppedColor: "#ef4444"
+        };
+        
+        let showFavoritesOnly = false; // Estado do filtro de favoritos
+        let currentPlatformFilter = 'all'; // Estado do filtro de plataforma (NOVO)
+        let currentView = 'grade'; // 'grade', 'lista', 'timeline'
+
+        // ==========================================================
+        // SEÇÃO 2: FUNÇÕES PRINCIPAIS DE UX/RENDERIZAÇÃO
+        // ==========================================================
+
+        function switchView(viewName) {
+            currentView = viewName;
+            
+            // Atualiza botões
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            
+            const dashboard = document.getElementById('dashboard-view');
+            const timeline = document.getElementById('timeline-view');
+
+            if (viewName === 'timeline') {
+                dashboard.style.display = 'none';
+                timeline.style.display = 'block';
+                renderTimeline();
+            } else {
+                timeline.style.display = 'none';
+                dashboard.style.display = 'grid';
+                
+                if (viewName === 'lista') {
+                    dashboard.classList.add('view-list');
+                } else {
+                    dashboard.classList.remove('view-list');
+                }
+                renderList(games); // Re-renderiza para ajustar classes se necessário
+            }
+        }
+
+        // FUNÇÃO DE FILTRO DE PLATAFORMA (NOVO)
+        function applyPlatformFilter() {
+            currentPlatformFilter = document.getElementById('platformFilter').value;
+            if (currentView === 'timeline') {
+                renderTimeline();
+            } else {
+                renderList(games);
+            }
+        }
+
+        // POPULAR DROPDOWN DE PLATAFORMAS (NOVO)
+        function populatePlatformDropdown() {
+            // Pega todas as plataformas únicas
+            const allPlatforms = games.map(g => g.platform).filter(p => p); // filter remove nulos
+            const uniquePlatforms = [...new Set(allPlatforms)].sort();
+
+            const select = document.getElementById('platformFilter');
+            // Salva a seleção atual antes de limpar
+            const currentSelection = select.value;
+
+            // Mantém apenas a opção "Todas"
+            select.innerHTML = '<option value="all">🎮 Todas</option>';
+
+            uniquePlatforms.forEach(plat => {
+                const opt = document.createElement('option');
+                opt.value = plat;
+                opt.innerText = plat;
+                select.appendChild(opt);
+            });
+
+            // Tenta restaurar a seleção (se a plataforma ainda existir)
+            if (uniquePlatforms.includes(currentSelection) || currentSelection === 'all') {
+                select.value = currentSelection;
+            } else {
+                select.value = 'all';
+                currentPlatformFilter = 'all';
+            }
+        }
+
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline-view');
+            container.innerHTML = '';
+            
+            let list = [...games];
+            
+            // Filtros combinados
+            if(showFavoritesOnly) list = list.filter(g => g.isFavorite);
+            if(currentPlatformFilter !== 'all') list = list.filter(g => g.platform === currentPlatformFilter);
+            
+            // Se houver busca de texto ativa
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                list = list.filter(g => g.name.toLowerCase().includes(searchTerm));
+            }
+
+            // Ordena por data (início, fim ou criação)
+            list.sort((a, b) => {
+                const dateA = a.startDate || a.finishDate || (a.history[0] ? new Date(a.history[0].timestamp).toISOString() : '9999');
+                const dateB = b.startDate || b.finishDate || (b.history[0] ? new Date(b.history[0].timestamp).toISOString() : '9999');
+                return new Date(dateA) - new Date(dateB);
+            });
+
+            if (list.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color: var(--text-muted); margin-top: 20px;">Nenhum jogo encontrado para estes filtros.</p>';
+                return;
+            }
+
+            list.forEach(g => {
+                // Determina qual data mostrar
+                let displayDate = 'Sem Data';
+                let dateLabel = 'Adicionado';
+                
+                if (g.finishDate) { displayDate = formatDate(g.finishDate); dateLabel = 'Zerado'; }
+                else if (g.startDate) { displayDate = formatDate(g.startDate); dateLabel = 'Iniciado'; }
+                else if (g.history && g.history.length > 0) {
+                    displayDate = formatDate(new Date(g.history[0].timestamp).toISOString().split('T')[0]);
+                }
+
+                // Cria o Card simplificado para timeline
+                const favIconHtml = `<div class="fav-badge ${g.isFavorite ? 'active' : ''}" onclick="toggleFavorite(${g.id}, event)">${g.isFavorite ? '❤️' : '🤍'}</div>`;
+                const editIconHtml = `<span class="edit-badge" onclick="event.stopPropagation(); openEditModal(${g.id})">✎</span>`;
+
+                const html = `
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            ${displayDate}<br>
+                            <span style="font-size: 0.8em; opacity: 0.7; font-weight: normal;">${dateLabel}</span>
+                        </div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="game-card" style="margin-bottom:0">
+                                <div class="card-img-container" style="height: 140px;">
+                                    <img src="${g.image}" class="game-img" onerror="this.src='https://via.placeholder.com/400x200/111/333?text=SEM+IMAGEM'">
+                                    ${favIconHtml}
+                                    <div class="card-badges">${editIconHtml}</div>
+                                </div>
+                                <div class="game-info" style="padding: 10px;">
+                                    <div class="game-title" style="font-size: 1rem;">${g.name}</div>
+                                    <div class="game-platform" style="font-size: 0.7rem;">${g.platform}</div>
+                                    <div class="stars" style="font-size: 0.8rem;">${g.status === 'finished' ? (g.rating ? '★'.repeat(g.rating) : '') : ''}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        function hexToRgbA(hex, alpha) {
+            let r = 0, g = 0, b = 0;
+            if (hex.length >= 4 && hex.length <= 7) {
+                hex = hex.startsWith('#') ? hex : '#' + hex;
+                if (hex.length === 4) {
+                    r = parseInt(hex[1] + hex[1], 16);
+                    g = parseInt(hex[2] + hex[2], 16);
+                    b = parseInt(hex[3] + hex[3], 16);
+                } else if (hex.length === 7) {
+                    r = parseInt(hex.substring(1, 3), 16);
+                    g = parseInt(hex.substring(3, 5), 16);
+                    b = parseInt(hex.substring(5, 7), 16);
+                }
+            }
+            return `rgba(${r || 0}, ${g || 0}, ${b || 0}, ${alpha})`;
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            try {
+                const parts = dateString.split('-');
+                if (parts.length === 3) {
+                    const date = new Date(parts[0], parts[1] - 1, parts[2]); 
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    return `${day}/${month}/${year}`;
+                }
+            } catch (e) {
+                return dateString; 
+            }
+            return dateString;
+        }
+        
+        function formatHistoryDate(timestamp) {
+            const date = new Date(timestamp);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+        }
+
+        function applyConfig(cfg = config) {
+            document.getElementById('siteLogoDisplay').innerText = cfg.siteName;
+            document.getElementById('userNameDisplay').innerText = cfg.userName;
+            document.getElementById('userAvatarDisplay').src = cfg.userAvatar;
+
+            const root = document.documentElement;
+            root.style.setProperty('--bg-dark', cfg.bgDark);
+            root.style.setProperty('--primary', cfg.primaryColor);
+            root.style.setProperty('--primary-glow', hexToRgbA(cfg.primaryColor, 0.5));
+            root.style.setProperty('--bg-card-backlog', cfg.bgCardBacklog);
+            root.style.setProperty('--bg-card-playing', cfg.bgCardPlaying);
+            root.style.setProperty('--bg-card-finished', cfg.bgCardFinished);
+            root.style.setProperty('--bg-card-dropped', cfg.bgCardDropped);
+            root.style.setProperty('--col-backlog-highlight', cfg.backlogColor);
+            root.style.setProperty('--col-playing-highlight', cfg.playingColor);
+            root.style.setProperty('--col-finished-highlight', cfg.finishedColor);
+            root.style.setProperty('--col-dropped-highlight', cfg.droppedColor);
+            root.style.setProperty('--danger', cfg.droppedColor);
+            root.style.setProperty('--accent', cfg.playingColor);
+            root.style.setProperty('--accent-glow', hexToRgbA(cfg.playingColor, 0.5));
+            
+            const r = parseInt(cfg.bgCardBacklog.substring(1, 3), 16);
+            const g = parseInt(cfg.bgCardBacklog.substring(3, 5), 16);
+            const b = parseInt(cfg.bgCardBacklog.substring(5, 7), 16);
+            root.style.setProperty('--glass', `rgba(${r || 28}, ${g || 28}, ${b || 33}, 0.8)`);
+        }
+
+        function toggleShowFavorites() {
+            showFavoritesOnly = !showFavoritesOnly;
+            const btn = document.getElementById('favFilterBtn');
+            if(showFavoritesOnly) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            // Atualiza a visualização atual
+            if(currentView === 'timeline') renderTimeline();
+            else renderList(games);
+        }
+
+        function toggleFavorite(id, event) {
+            event.stopPropagation(); 
+            const g = games.find(x => x.id === id);
+            if(g) {
+                g.isFavorite = !g.isFavorite;
+                saveData();
+            }
+        }
+
+        function renderList(list) {
+            // Se estiver em modo timeline, ignora
+            if(currentView === 'timeline') return;
+
+            // 1. Filtro de Favoritos
+            let displayList = list;
+            if(showFavoritesOnly) {
+                displayList = list.filter(g => g.isFavorite);
+            }
+
+            // 2. Filtro de Plataforma (NOVO)
+            if(currentPlatformFilter !== 'all') {
+                displayList = displayList.filter(g => g.platform === currentPlatformFilter);
+            }
+
+            const cols = { 
+                backlog: document.getElementById('list-backlog'), 
+                playing: document.getElementById('list-playing'), 
+                finished: document.getElementById('list-finished'),
+                dropped: document.getElementById('list-dropped')
+            };
+            const counts = { backlog: 0, playing: 0, finished: 0, dropped: 0 };
+            Object.values(cols).forEach(c => c.innerHTML = '');
+            
+            displayList.forEach(g => {
+                counts[g.status]++;
+                
+                let stars = ''; 
+                const rating = parseInt(g.rating) || 0; 
+                if(rating > 0) for(let i=0; i<rating; i++) stars += '★';
+                
+                let dateBadges = '';
+                if (g.status === 'finished' && g.finishDate) {
+                    dateBadges += `<span class="time-badge" style="background: var(--primary); border-color: var(--primary); opacity: 1;">🏆 ${formatDate(g.finishDate)}</span>`;
+                } else if (g.status === 'playing' && g.startDate) {
+                    dateBadges += `<span class="time-badge" style="background: var(--accent); border-color: var(--accent); opacity: 1;">▶ ${formatDate(g.startDate)}</span>`;
+                }
+                
+                const editIconHtml = `<span class="edit-badge" onclick="event.stopPropagation(); openEditModal(${g.id})">✎</span>`;
+                
+                const favIconHtml = `<div class="fav-badge ${g.isFavorite ? 'active' : ''}" onclick="toggleFavorite(${g.id}, event)">
+                    ${g.isFavorite ? '❤️' : '🤍'}
+                </div>`;
+
+                let btns = '';
+                if(g.status === 'backlog') {
+                    btns = `<button class="action-btn" onclick="moveGame(${g.id}, 'playing')">▶ Jogar</button>
+                            <button class="action-btn btn-drop" onclick="openConfirmDropModal(${g.id})">🗑️ Drop</button>`; 
+                } else if(g.status === 'playing') {
+                    btns = `<button class="action-btn" onclick="moveGame(${g.id}, 'backlog')">⏪ Espera</button>
+                            <button class="action-btn" style="color:var(--accent);border-color:var(--accent)" onclick="openReviewModal(${g.id})">🏆 Zerar</button>
+                            <button class="action-btn btn-drop" onclick="openConfirmDropModal(${g.id})">🗑️ Drop</button>`; 
+                } else if(g.status === 'finished') {
+                    btns = `<button class="action-btn" onclick="moveGame(${g.id}, 'playing')">↺ Replay</button>`;
+                } else if(g.status === 'dropped') { 
+                    btns = `<button class="action-btn" onclick="moveGame(${g.id}, 'backlog')">↺ Tentar Novamente</button>`;
+                }
+
+                const deleteBtnHtml = `<button class="action-btn btn-delete history-btn" onclick="openConfirmDeleteModal(${g.id})">✕</button>`;
+                
+                const historyBtnHtml = `<button class="action-btn history-btn" onclick="openHistoryModal(${g.id})">
+                                            <span style="font-size: 1.1rem;">&#x1F504;</span>
+                                        </button>`;
+                
+                const reviewHtml = (g.status === 'finished' && g.shortReview && g.shortReview.trim() !== '') 
+                                ? `<div class="review-box"><strong>✍️ Review:</strong> ${g.shortReview}</div>` 
+                                : '';
+                
+                const finalStars = g.status === 'finished' ? stars : ''; 
+                
+                const html = `
+                    <div class="game-card">
+                        <div class="card-img-container">
+                            <img src="${g.image}" class="game-img" onerror="this.src='https://via.placeholder.com/400x200/111/333?text=SEM+IMAGEM'">
+                            ${favIconHtml}
+                            <div class="card-badges">
+                                ${g.time ? `<span class="time-badge">⏱ ${g.time}h</span>` : ''}
+                                ${dateBadges}
+                                ${editIconHtml} 
+                            </div>
+                        </div>
+                        <div class="game-info">
+                            <div class="game-title">${g.name}</div>
+                            <div class="game-platform">${g.platform}</div>
+                            <div class="stars">${finalStars}</div>
+                        </div>
+                        ${reviewHtml}
+                        <div class="card-actions">
+                            ${btns}
+                            ${historyBtnHtml}
+                            ${deleteBtnHtml}
+                        </div>
+                    </div>`;
+                cols[g.status].innerHTML += html;
+            });
+            
+            document.getElementById('count-backlog').innerText = cols.backlog.childElementCount;
+            document.getElementById('count-playing').innerText = cols.playing.childElementCount;
+            document.getElementById('count-finished').innerText = cols.finished.childElementCount;
+            document.getElementById('count-dropped').innerText = cols.dropped.childElementCount;
+        }
+
+        // ==========================================================
+        // SEÇÃO 3: FUNÇÕES DE HISTÓRICO 
+        // ==========================================================
+
+        const statusMap = {
+            'backlog': '📝 Backlog',
+            'playing': '🎮 Jogando',
+            'finished': '🏆 Zerado',
+            'dropped': '🗑️ Dropado',
+            'created': '✨ Adicionado'
+        };
+
+        function addHistoryEntry(game, newStatus) {
+            if (!Array.isArray(game.history)) { game.history = []; }
+            const lastStatus = game.history.length > 0 ? game.history[game.history.length - 1].status : null;
+            if (newStatus !== lastStatus) {
+                game.history.push({ status: newStatus, timestamp: Date.now() });
+            }
+        }
+        
+        function openHistoryModal(id) {
+            const game = games.find(g => g.id === id);
+            if (!game) return;
+
+            document.getElementById('historyGameTitle').innerText = game.name;
+            const historyContainer = document.getElementById('historyListContainer');
+            historyContainer.innerHTML = ''; 
+
+            if (!game.history || game.history.length === 0) {
+                 historyContainer.innerHTML = `<p style="text-align: center; color: var(--text-muted);">Nenhuma mudança de status registrada.</p>`;
+            } else {
+                const reversedHistory = [...game.history].reverse();
+                let historyHtml = '<ul style="list-style: none; padding: 0;">';
+                reversedHistory.forEach(entry => {
+                    const statusText = statusMap[entry.status] || entry.status;
+                    const dateText = formatHistoryDate(entry.timestamp);
+                    historyHtml += `
+                        <li style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <span style="font-weight: 600; color: ${entry.status === 'finished' ? 'var(--primary)' : entry.status === 'playing' ? 'var(--accent)' : entry.status === 'dropped' ? 'var(--danger)' : 'var(--text-main)'};">
+                                ${statusText}
+                            </span>
+                            <span style="color: var(--text-muted); font-size: 0.9em;">
+                                ${dateText}
+                            </span>
+                        </li>
+                    `;
+                });
+                historyHtml += '</ul>';
+                historyContainer.innerHTML = historyHtml;
+            }
+            document.getElementById('historyModal').style.display = 'flex';
+        }
+
+
+        // ==========================================================
+        // SEÇÃO 4: FUNÇÕES CRUD E MODAL 
+        // ==========================================================
+
+        let tempGameId = null; 
+
+        function saveData() { 
+            localStorage.setItem('gameTracker_v2', JSON.stringify(games));
+            populatePlatformDropdown(); // Atualiza dropdown após salvar
+            if(currentView === 'timeline') renderTimeline();
+            else renderList(games); 
+        }
+        
+        function internalDeleteGame(id) { 
+            games=games.filter(g=>g.id!==id); 
+            saveData(); 
+            closeModal('confirmModal');
+        }
+        
+        function moveGame(id,s) { 
+            const g=games.find(x=>x.id===id); 
+            if(g){ 
+                if (s === 'playing' && !g.startDate) {
+                    g.startDate = new Date().toISOString().split('T')[0];
+                }
+                g.status=s; 
+                addHistoryEntry(g, s); 
+                saveData(); 
+            } 
+        }
+        
+        function openReviewModal(id) { 
+            const g = games.find(x => x.id === id);
+            if (!g) return;
+            document.getElementById('reviewGameId').value = id;
+            document.getElementById('reviewGameTitle').innerText = g.name;
+            document.getElementById('reviewRating').value = g.rating || '0'; 
+            document.getElementById('reviewShortReview').value = g.shortReview || '';
+            document.getElementById('reviewModal').style.display = 'flex';
+        }
+
+        function submitReviewAndFinish() {
+            const id = parseInt(document.getElementById('reviewGameId').value);
+            const g = games.find(x => x.id === id);
+            if (g) {
+                g.rating = document.getElementById('reviewRating').value;
+                g.shortReview = document.getElementById('reviewShortReview').value.trim();
+                g.status = 'finished'; 
+                if (!g.finishDate) { g.finishDate = new Date().toISOString().split('T')[0]; }
+                addHistoryEntry(g, 'finished'); 
+                saveData();
+            }
+            closeModal('reviewModal');
+        }
+
+        function internalDropGame(id) {
+            const g = games.find(x=>x.id===id); 
+            if(g) { 
+                g.status = 'dropped'; 
+                addHistoryEntry(g, 'dropped'); 
+                saveData(); 
+            } 
+            closeModal('confirmModal');
+        }
+
+        function openConfirmDropModal(id) {
+            const game = games.find(g => g.id === id);
+            if (!game) return;
+            document.getElementById('confirmActionId').value = id;
+            document.getElementById('confirmActionType').value = 'drop';
+            document.getElementById('confirmGameName').innerText = game.name;
+            document.getElementById('confirmMessage').innerHTML = `Tem certeza que deseja marcar <span id="confirmGameName" style="color: var(--text-main); font-weight: bold;">${game.name}</span> como **Dropado**?`;
+            const button = document.getElementById('confirmActionButton');
+            button.innerText = 'Sim, Dropar Jogo';
+            button.className = 'btn btn-confirm-drop';
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+        
+        function openConfirmDeleteModal(id) {
+            const game = games.find(g => g.id === id);
+            if (!game) return;
+            document.getElementById('confirmActionId').value = id;
+            document.getElementById('confirmActionType').value = 'delete';
+            document.getElementById('confirmGameName').innerText = game.name;
+            document.getElementById('confirmMessage').innerHTML = `Tem certeza que deseja **EXCLUIR PERMANENTEMENTE** <span id="confirmGameName" style="color: var(--danger); font-weight: bold;">${game.name}</span>? Esta ação não pode ser desfeita.`;
+            const button = document.getElementById('confirmActionButton');
+            button.innerText = 'Excluir Permanentemente';
+            button.className = 'btn btn-confirm-drop'; 
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+        
+        // --- FUNÇÕES DE RESET ---
+
+        function openConfirmResetDataModal() {
+            closeModal('configModal'); // Fecha menu config
+            document.getElementById('fullResetConfirmationModal').style.display = 'flex'; // Abre aviso
+        }
+
+        function cancelReset() {
+            closeModal('fullResetConfirmationModal'); // Fecha aviso
+            openConfigModal(); // REABRE o menu de configurações
+        }
+        
+        function internalResetData() {
+            localStorage.removeItem('gameTracker_v2');
+            localStorage.removeItem('gameTracker_config');
+            window.location.reload(); 
+        }
+
+        function executeConfirmedAction() {
+            const id = document.getElementById('confirmActionId').value;
+            const type = document.getElementById('confirmActionType').value;
+            if (type === 'drop') {
+                internalDropGame(parseInt(id));
+            } else if (type === 'delete') {
+                internalDeleteGame(parseInt(id));
+            }
+        }
+
+        function openAddModal() { 
+            document.querySelectorAll('#gameModal input, #gameModal textarea').forEach(i=>i.value=''); 
+            document.getElementById('gameStartDate').value = ''; 
+            document.getElementById('gameFinishDate').value = '';
+            document.getElementById('editGameId').value=''; 
+            document.getElementById('modalTitle').innerText='Adicionar Novo Jogo'; 
+            document.getElementById('gameRating').value='0';
+            // Usa input normal agora, mas com datalist
+            document.getElementById('gamePlatform').value='';
+            document.getElementById('gameModal').style.display='flex'; 
+        }
+        
+        function openEditModal(id) { 
+            const gameId = parseInt(id); 
+            const g = games.find(x => x.id === gameId);
+            if (!g) return;
+            document.getElementById('editGameId').value = g.id; 
+            document.getElementById('gameName').value = g.name; 
+            document.getElementById('gamePlatform').value = g.platform; 
+            document.getElementById('gameTime').value = g.time || ''; 
+            document.getElementById('gameImage').value = g.image; 
+            document.getElementById('gameRating').value = g.rating || '0'; 
+            document.getElementById('gameReview').value = g.shortReview || ''; 
+            document.getElementById('gameStartDate').value = g.startDate || '';
+            document.getElementById('gameFinishDate').value = g.finishDate || '';
+            document.getElementById('modalTitle').innerText = `Editar Jogo: ${g.name}`; 
+            document.getElementById('gameModal').style.display = 'flex'; 
+        }
+
+        function saveGame() {
+            const name = document.getElementById('gameName').value.trim(); if(!name) return alert("Por favor, preencha o Nome do Jogo.");
+            let timeValue = document.getElementById('gameTime').value.trim();
+            if (timeValue !== '' && isNaN(parseInt(timeValue))) { return alert("O campo 'Tempo Estimado' deve ser um número."); }
+            timeValue = timeValue !== '' ? parseInt(timeValue) : '';
+            const startDate = document.getElementById('gameStartDate').value || null;
+            const finishDate = document.getElementById('gameFinishDate').value || null;
+            if (startDate && finishDate && new Date(startDate) > new Date(finishDate)) {
+                return alert("A Data de Início não pode ser posterior à Data de Término.");
+            }
+            
+            // Pega o valor do input (que agora aceita qualquer texto)
+            const platformValue = document.getElementById('gamePlatform').value.trim() || 'PC';
+
+            const newData = { 
+                name, platform: platformValue, time: timeValue, 
+                image: document.getElementById('gameImage').value.trim() || 'https://via.placeholder.com/400x200/111/333?text=SEM+IMAGEM', 
+                rating: document.getElementById('gameRating').value, shortReview: document.getElementById('gameReview').value.trim(), 
+                startDate: startDate, finishDate: finishDate 
+            };
+            const id = document.getElementById('editGameId').value;
+            if(id) {
+                const gameId = parseInt(id);
+                const originalGame = games.find(g => g.id === gameId);
+                Object.assign(originalGame, newData); 
+            } else {
+                const newGame = {id:Date.now(), ...newData, status:'backlog', history: [], isFavorite: false};
+                addHistoryEntry(newGame, 'created'); 
+                games.push(newGame);
+            }
+            saveData(); closeModal('gameModal');
+        }
+
+        function setupColorInputListeners() {
+            const colorFields = [
+                { picker: 'cfgBgDarkPicker', text: 'cfgBgDarkText' },
+                { picker: 'cfgPrimaryColorPicker', text: 'cfgPrimaryColorText' },
+                { picker: 'cfgBgCardBacklogPicker', text: 'cfgBgCardBacklogText' },
+                { picker: 'cfgBgCardPlayingPicker', text: 'cfgBgCardPlayingText' },
+                { picker: 'cfgBgCardFinishedPicker', text: 'cfgBgCardFinishedText' },
+                { picker: 'cfgBgCardDroppedPicker', text: 'cfgBgCardDroppedText' },
+                { picker: 'cfgBacklogColorPicker', text: 'cfgBacklogColorText' },
+                { picker: 'cfgPlayingColorPicker', text: 'cfgPlayingColorText' },
+                { picker: 'cfgFinishedColorPicker', text: 'cfgFinishedColorText' },
+                { picker: 'cfgDroppedColorPicker', text: 'cfgDroppedColorText' },
+            ];
+            colorFields.forEach(field => {
+                const picker = document.getElementById(field.picker);
+                const text = document.getElementById(field.text);
+                if (picker && text) {
+                    picker.oninput = function() { text.value = this.value.toUpperCase(); };
+                    text.oninput = function() {
+                        let val = this.value.toUpperCase().trim();
+                        if (!val.startsWith('#')) { val = '#' + val; }
+                        this.value = val;
+                        if (/^#([0-9A-F]{3}){1,2}$/i.test(val)) { picker.value = val; }
+                    };
+                }
+            });
+        }
+        
+        function openConfigModal() { 
+            document.getElementById('cfgSiteName').value=config.siteName; 
+            document.getElementById('cfgUserName').value=config.userName; 
+            document.getElementById('cfgUserAvatar').value=config.userAvatar; 
+            document.getElementById('configModal').style.display='flex'; 
+        }
+        
+        function openColorModal() { 
+            setupColorInputListeners(); 
+            document.getElementById('cfgPrimaryColorPicker').value = config.primaryColor;
+            document.getElementById('cfgPrimaryColorText').value = config.primaryColor;
+            document.getElementById('cfgBgDarkPicker').value = config.bgDark;
+            document.getElementById('cfgBgDarkText').value = config.bgDark;
+            document.getElementById('cfgBgCardBacklogPicker').value = config.bgCardBacklog;
+            document.getElementById('cfgBgCardBacklogText').value = config.bgCardBacklog;
+            document.getElementById('cfgBgCardPlayingPicker').value = config.bgCardPlaying;
+            document.getElementById('cfgBgCardPlayingText').value = config.bgCardPlaying;
+            document.getElementById('cfgBgCardFinishedPicker').value = config.bgCardFinished;
+            document.getElementById('cfgBgCardFinishedText').value = config.bgCardFinished;
+            document.getElementById('cfgBgCardDroppedPicker').value = config.bgCardDropped; 
+            document.getElementById('cfgBgCardDroppedText').value = config.bgCardDropped; 
+            document.getElementById('cfgBacklogColorPicker').value = config.backlogColor;
+            document.getElementById('cfgBacklogColorText').value = config.backlogColor;
+            document.getElementById('cfgPlayingColorPicker').value = config.playingColor;
+            document.getElementById('cfgPlayingColorText').value = config.playingColor;
+            document.getElementById('cfgFinishedColorPicker').value = config.finishedColor;
+            document.getElementById('cfgFinishedColorText').value = config.finishedColor;
+            document.getElementById('cfgDroppedColorPicker').value = config.droppedColor; 
+            document.getElementById('cfgDroppedColorText').value = config.droppedColor; 
+            document.getElementById('colorModal').style.display='flex'; 
+        }
+        
+        function saveConfig() {
+            config.siteName = document.getElementById('cfgSiteName').value.trim() || "GAME TRACKER";
+            config.userName = document.getElementById('cfgUserName').value.trim() || "Player";
+            config.userAvatar = document.getElementById('cfgUserAvatar').value.trim() || "https://ui-avatars.com/api/?name=P&background=a855f7&color=fff";
+            localStorage.setItem('gameTracker_config', JSON.stringify(config));
+            applyConfig(); closeModal('configModal');
+        }
+        
+        function saveColorConfig() {
+            config.primaryColor = document.getElementById('cfgPrimaryColorText').value;
+            config.bgDark = document.getElementById('cfgBgDarkText').value;
+            config.bgCardBacklog = document.getElementById('cfgBgCardBacklogText').value;
+            config.bgCardPlaying = document.getElementById('cfgBgCardPlayingText').value;
+            config.bgCardFinished = document.getElementById('cfgBgCardFinishedText').value;
+            config.bgCardDropped = document.getElementById('cfgBgCardDroppedText').value; 
+            config.backlogColor = document.getElementById('cfgBacklogColorText').value;
+            config.playingColor = document.getElementById('cfgPlayingColorText').value;
+            config.finishedColor = document.getElementById('cfgFinishedColorText').value;
+            config.droppedColor = document.getElementById('cfgDroppedColorText').value; 
+            localStorage.setItem('gameTracker_config', JSON.stringify(config));
+            applyConfig(); closeModal('colorModal');
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display='none'; }
+        function filterGames() { const t = document.getElementById('searchInput').value.toLowerCase(); renderList(games.filter(g => g.name.toLowerCase().includes(t))); }
+        function exportData() { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(games)); a.download="games_backup.json"; document.body.appendChild(a); a.click(); a.remove(); alert("Backup exportado como games_backup.json"); }
+        function importData(inp) { const r=new FileReader(); r.onload=e=>{try{games=JSON.parse(e.target.result);saveData();alert("Backup Restaurado com sucesso!");}catch(e){alert("Erro ao ler o arquivo JSON. Certifique-se de que o arquivo é um backup válido.");}}; if(inp.files[0])r.readAsText(inp.files[0]); }
+        
+        // --- CORES COMPLEMENTARES ---
+        function hexToHsl(hex) {
+            let r = parseInt(hex.substring(1, 3), 16) / 255, g = parseInt(hex.substring(3, 5), 16) / 255, b = parseInt(hex.substring(5, 7), 16) / 255;
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max === min) { h = s = 0; } else {
+                let d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) { case r: h = (g - b) / d + (g < b ? 6 : 0); break; case g: h = (b - r) / d + 2; break; case b: h = (r - g) / d + 4; break; }
+                h /= 6;
+            }
+            return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+        }
+
+        function hslToHex(h, s, l) {
+            h /= 360; s /= 100; l /= 100;
+            let r, g, b;
+            if (s === 0) { r = g = b = l; } else {
+                const hue2rgb = (p, q, t) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1 / 3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1 / 3);
+            }
+            const toHex = x => { const hex = Math.round(x * 255).toString(16); return hex.length === 1 ? '0' + hex : hex; };
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+        }
+
+        function generateRandomPrimaryColor() {
+            const h = Math.floor(Math.random() * 360);
+            const s = 80 + Math.floor(Math.random() * 20); 
+            const l = 50 + Math.floor(Math.random() * 10);
+            return hslToHex(h, s, l);
+        }
+
+        function randomizeColorsAndApply() {
+            const primary = generateRandomPrimaryColor();
+            const { h, s, l } = hexToHsl(primary);
+            const accent = hslToHex((h + 180) % 360, s, l); 
+            const danger = hslToHex((h + 60) % 360, s, l); 
+            const darkBg = hslToHex(h, 10, 6); 
+            const cardBg = hslToHex(h, 15, 10);
+            const backlogHighlight = hslToHex(h, 15, 15); 
+
+            const tempConfig = {...config};
+            tempConfig.primaryColor = primary; tempConfig.bgDark = darkBg;
+            tempConfig.playingColor = accent; tempConfig.droppedColor = danger;
+            tempConfig.bgCardBacklog = cardBg; tempConfig.bgCardPlaying = cardBg;
+            tempConfig.bgCardFinished = cardBg; tempConfig.bgCardDropped = cardBg;
+            tempConfig.backlogColor = backlogHighlight; tempConfig.finishedColor = primary;
+
+            document.getElementById('cfgPrimaryColorPicker').value = primary; document.getElementById('cfgPrimaryColorText').value = primary;
+            document.getElementById('cfgBgDarkPicker').value = darkBg; document.getElementById('cfgBgDarkText').value = darkBg;
+            document.getElementById('cfgBgCardBacklogPicker').value = cardBg; document.getElementById('cfgBgCardBacklogText').value = cardBg;
+            document.getElementById('cfgBgCardPlayingPicker').value = cardBg; document.getElementById('cfgBgCardPlayingText').value = cardBg;
+            document.getElementById('cfgBgCardFinishedPicker').value = cardBg; document.getElementById('cfgBgCardFinishedText').value = cardBg;
+            document.getElementById('cfgBgCardDroppedPicker').value = cardBg; document.getElementById('cfgBgCardDroppedText').value = cardBg;
+            document.getElementById('cfgPlayingColorPicker').value = accent; document.getElementById('cfgPlayingColorText').value = accent;
+            document.getElementById('cfgFinishedColorPicker').value = primary; document.getElementById('cfgFinishedColorText').value = primary;
+            document.getElementById('cfgDroppedColorPicker').value = danger; document.getElementById('cfgDroppedColorText').value = danger;
+            document.getElementById('cfgBacklogColorPicker').value = backlogHighlight; document.getElementById('cfgBacklogColorText').value = backlogHighlight;
+            
+            applyConfig(tempConfig); 
+        }
+
+        // --- ROLETA (CORRIGIDA) ---
+        let rouletteWinner = null;
+        
+        function startRoulette() {
+            // Sorteia APENAS do Backlog
+            let backlog = games.filter(g => g.status === 'backlog');
+            
+            // Aplica filtro de plataforma na roleta também se quiser
+            if (currentPlatformFilter !== 'all') {
+                backlog = backlog.filter(g => g.platform === currentPlatformFilter);
+            }
+
+            if(backlog.length === 0) {
+                return alert("Adicione jogos no Backlog (nesta plataforma) para usar a Roleta!");
+            }
+
+            const finalWinner = backlog[Math.floor(Math.random() * backlog.length)];
+
+            const overlay = document.getElementById('rouletteOverlay');
+            const card = document.getElementById('rouletteCard');
+            const els = { img: document.getElementById('rImage'), title: document.getElementById('rTitle'), plat: document.getElementById('rPlatform') };
+            
+            overlay.style.display = 'flex';
+            card.classList.remove('winner'); 
+            card.classList.add('spinning');
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'scale(1)';
+            }, 10);
+
+            document.getElementById('clickToCloseMsg').style.opacity = '0';
+            rouletteWinner = null;
+
+            let spins = 0, maxSpins = 30, delay = 50;
+
+            function step() {
+                const rnd = backlog[Math.floor(Math.random() * backlog.length)];
+                els.img.src = rnd.image;
+                els.img.onerror = function() { this.src = 'https://via.placeholder.com/400x200/111/333?text=SEM+IMAGEM'; };
+                els.title.innerText = rnd.name; 
+                els.plat.innerText = rnd.platform;
+                
+                spins++;
+                
+                if(spins < maxSpins) {
+                    if(spins > maxSpins - 8) delay += 40;
+                    setTimeout(step, delay);
+                } else {
+                    rouletteWinner = finalWinner;
+                    els.img.src = rouletteWinner.image;
+                    els.img.onerror = function() { this.src = 'https://via.placeholder.com/400x200/111/333?text=SEM+IMAGEM'; };
+                    els.title.innerText = rouletteWinner.name; 
+                    els.plat.innerText = rouletteWinner.platform;
+                    
+                    card.classList.remove('spinning'); 
+                    card.classList.add('winner');
+                    card.style.transform = 'scale(1.15)';
+                    
+                    const flash = document.getElementById('flashEffect');
+                    flash.style.opacity = '0.8';
+                    setTimeout(() => flash.style.opacity = '0', 100);
+                    setTimeout(() => document.getElementById('clickToCloseMsg').style.opacity = '1', 1000);
+                }
+            }
+            step();
+        }
+
+        function closeRouletteIfWinner(e) {
+            if(rouletteWinner && e.target.id === 'rouletteOverlay') { 
+                const overlay = document.getElementById('rouletteOverlay');
+                const card = document.getElementById('rouletteCard');
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.8)';
+                setTimeout(() => { overlay.style.display = 'none'; }, 300); 
+            }
+        }
+        
+        // ==========================================================
+        // SEÇÃO 6: INICIALIZAÇÃO
+        // ==========================================================
+        
+        // Polimento: Garante que todos os jogos antigos tenham os novos campos inicializados
+        games.forEach(g => {
+            if (g.history === undefined || !Array.isArray(g.history)) { g.history = [{ status: g.status || 'created', timestamp: Date.now() }]; }
+            if (g.shortReview === undefined) { g.shortReview = ''; }
+            if (g.rating === undefined) { g.rating = '0'; }
+            if (g.startDate === undefined) { g.startDate = null; }
+            if (g.finishDate === undefined) { g.finishDate = null; }
+            // Inicializa favorito
+            if (g.isFavorite === undefined) { g.isFavorite = false; }
+            // Garante que plataforma não seja null para o filtro
+            if (!g.platform) g.platform = "PC";
+        });
+        
+        applyConfig();
+        populatePlatformDropdown(); // Popula o dropdown ao iniciar
+        renderList(games);
+    </script>
+</body>
+</html>
